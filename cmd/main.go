@@ -12,28 +12,38 @@ import (
 )
 
 func main() {
-	db, err := sqlx.Connect("postgres", "postgres://postgres:secret@127.0.0.3:5432/postgres?sslmode=disable")
+	db, err := sqlx.Connect("postgres", "postgres://postgres:secret@localhost:5432/postgres?sslmode=disable")
 	if err != nil {
 		log.Fatalln("Failed to connect to database:", err)
 	}
 
 	driverHelperStore := controllers.NewDBDriverHelperStore(db)
-
-	handler := web.NewHandler(driverHelperStore)
+	vehicleStore := controllers.NewDBVehicleStore(db)
+	driverHelperHandler := web.NewHandler(driverHelperStore)
+	vehicleHandler := web.NewVehicleHandler(vehicleStore)
 
 	router := gin.Default()
 
-	router.GET("/driver_helpers/:id", handler.GetDriverHelperByID)
-	router.GET("/driver_helpers", handler.GetAllDriverHelpers)
-	router.POST("/driver_helpers", handler.CreateDriverHelper)
-	router.PUT("/driver_helpers/:id", handler.UpdateDriverHelper)
-	router.DELETE("/driver_helpers/:id", handler.DeleteDriverHelper)
+	// Driver Helper Routes
+	router.GET("/driver_helpers/:id", driverHelperHandler.GetDriverHelperByID)
+	router.GET("/driver_helpers", driverHelperHandler.GetAllDriverHelpers)
+	router.POST("/driver_helpers", driverHelperHandler.CreateDriverHelper)
+	router.PUT("/driver_helpers/:id", driverHelperHandler.UpdateDriverHelper)
+	router.DELETE("/driver_helpers/:id", driverHelperHandler.DeleteDriverHelper)
 
-	router.GET("/driver_helpers/driver", handler.GetDrivers)
-	router.GET("/driver_helpers/helpers", handler.GetHelpers)
+	router.GET("/driver_helpers/driver", driverHelperHandler.GetDrivers)
+	router.GET("/driver_helpers/helpers", driverHelperHandler.GetHelpers)
+	router.GET("/driver_helpers/mobile/:mobile", driverHelperHandler.GetDriverHelperByMobileNumber)
 
-	router.GET("/driver_helpers/mobile/:mobile", handler.GetDriverHelperByMobileNumber)
-	router.GET("/driver_helpers/license/:license", handler.GetDriverHelperByLicenseNumber)
+	// Vehicle Routes
+	router.GET("/vehicles", vehicleHandler.GetAllVehicles)
+	router.POST("/vehicles", vehicleHandler.CreateVehicle)
+	router.GET("/vehicles/:id", vehicleHandler.GetVehicleByID)
+	router.PUT("/vehicles/:id", vehicleHandler.UpdateVehicle)
+	router.DELETE("/vehicles/:id", vehicleHandler.DeleteVehicle)
+	router.GET("/vehicles/driver_helper/:driver_helper_id", vehicleHandler.GetVehiclesByDriverHelperID)
+	router.GET("/vehicles/route/:route_number", vehicleHandler.GetVehiclesByRouteNumber)
+	router.GET("/vehicles/expired_certificates", vehicleHandler.GetExpiredCertificatesVehicles)
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})

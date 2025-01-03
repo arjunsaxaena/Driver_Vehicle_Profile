@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 
 	"github.com/arjunsaxaena/driver_vehicle_profile/model"
 )
@@ -89,6 +90,31 @@ func (s *DBDriverHelperStore) CreateDriverHelper(dh *model.DriverHelper) error {
 	if dh.ID == uuid.Nil {
 		dh.ID = uuid.New()
 	}
+	if dh.UserType != "Driver" && dh.UserType != "Helper" {
+		return fmt.Errorf("invalid user_type: %s; must be 'Driver' or 'Helper'", dh.UserType)
+	}
+
+	validBloodGroups := map[string]bool{
+		"A+": true, "A-": true, "B+": true, "B-": true, "AB+": true, "AB-": true, "O+": true, "O-": true,
+	}
+
+	if !validBloodGroups[dh.BloodGroup] {
+		return fmt.Errorf("invalid blood_group: %s; must be one of: A+, A-, B+, B-, AB+, AB-, O+, O-", dh.BloodGroup)
+	}
+	if len(dh.MobileNumber) != 10 {
+		return fmt.Errorf("invalid mobile_number: %s; must be a 10-digit number", dh.MobileNumber)
+	}
+	if len(dh.AadharNumber) != 12 {
+		return fmt.Errorf("invalid aadhar_number: %s; must be a 12-digit number", dh.AadharNumber)
+	}
+	if dh.PoliceVerification == "Yes" {
+		if dh.PoliceVerificationDate == nil {
+			return fmt.Errorf("police_verification_date is required when police_verification is 'Yes'")
+		}
+		if dh.PoliceVerificationDocumentPath == "" {
+			return fmt.Errorf("police_verification_document_path is required when police_verification is 'Yes'")
+		}
+	}
 
 	sb := sqlbuilder.NewInsertBuilder()
 	sb.SetFlavor(sqlbuilder.PostgreSQL)
@@ -103,6 +129,7 @@ func (s *DBDriverHelperStore) CreateDriverHelper(dh *model.DriverHelper) error {
 			dh.BloodGroup, dh.EmergencyContactName, dh.EmergencyContactNumber, dh.EmergencyContactRelation)
 
 	query, args := sb.Build()
+
 	_, err := s.db.Exec(query, args...)
 	if err != nil {
 		return fmt.Errorf("failed to insert driver/helper: %w", err)
@@ -154,17 +181,6 @@ func (s *DBDriverHelperStore) DriverHelperByMobileNumber(mobile string) (model.D
 	sb := sqlbuilder.NewSelectBuilder()
 	sb.SetFlavor(sqlbuilder.PostgreSQL)
 	sb.Select("*").From("driver_helpers").Where(sb.Equal("mobile_number", mobile))
-
-	query, args := sb.Build()
-	err := s.db.Get(&dh, query, args...)
-	return dh, err
-}
-
-func (s *DBDriverHelperStore) DriverHelperByLicenseNumber(license string) (model.DriverHelper, error) {
-	var dh model.DriverHelper
-	sb := sqlbuilder.NewSelectBuilder()
-	sb.SetFlavor(sqlbuilder.PostgreSQL)
-	sb.Select("*").From("driver_helpers").Where(sb.Equal("license_number", license))
 
 	query, args := sb.Build()
 	err := s.db.Get(&dh, query, args...)

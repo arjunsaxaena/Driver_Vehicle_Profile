@@ -143,19 +143,3 @@ func (h *Handler) GetDriverHelperByMobileNumber(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"driver_helper": dh})
 }
-
-func (h *Handler) GetDriverHelperByLicenseNumber(c *gin.Context) {
-	license := c.Param("license")
-	if license == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "License number is required"})
-		return
-	}
-
-	dh, err := h.Store.DriverHelperByLicenseNumber(license)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver/Helper not found with the given license number"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"driver_helper": dh})
-}

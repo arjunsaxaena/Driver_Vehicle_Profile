@@ -1,1 +1,2 @@
-DROP TABLE driver_helper_profiles;
+DROP TABLE driver_helpers;
+DROP TABLE vehicles;

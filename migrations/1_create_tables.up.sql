@@ -35,3 +35,29 @@ CREATE TABLE driver_helpers (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE vehicles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Vehicle Details
+    vehicle_number VARCHAR(20) NOT NULL UNIQUE,
+    route_number VARCHAR(20),
+    total_students_capacity INT NOT NULL CHECK (total_students_capacity > 0),
+    seats_available INT NOT NULL DEFAULT total_students_capacity CHECK (seats_available >= 0 AND seats_available <= total_students_capacity),
+    
+    -- Driver/Helper Information
+    driver_helper_id UUID REFERENCES driver_helpers(id) ON DELETE CASCADE,
+
+    -- Document Details
+    insurance_number VARCHAR(20) NOT NULL,
+    insurance_expiry_date DATE NOT NULL,
+    pollution_certificate_number VARCHAR(20) NOT NULL,
+    pollution_certificate_expiry_date DATE NOT NULL,
+    fitness_certificate_number VARCHAR(20) NOT NULL,
+    fitness_certificate_expiry_date DATE NOT NULL,
+    vehicle_document_path VARCHAR(255),
+
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
